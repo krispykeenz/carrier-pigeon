@@ -1,7 +1,10 @@
 import type { LocationSelection } from "@/types/location";
+import { LOCATIONS } from "@/constants/locations";
 
 const MAPBOX_BASE_URL = "https://api.mapbox.com/geocoding/v5/mapbox.places";
 const MIN_QUERY_LENGTH = 3;
+const DEMO_MODE_FLAG = 'true';
+const isDemoMode = process.env.EXPO_PUBLIC_DEMO_MODE === DEMO_MODE_FLAG;
 
 function extractCountryCode(feature: any): string | null {
   const contextArray: any[] = Array.isArray(feature?.context) ? feature.context : [];
@@ -21,6 +24,20 @@ export async function searchLocations(query: string, signal?: AbortSignal): Prom
   const trimmed = query.trim();
   if (trimmed.length < MIN_QUERY_LENGTH) {
     return [];
+  }
+
+  if (isDemoMode) {
+    const normalized = trimmed.toLowerCase();
+    return LOCATIONS.filter((loc) => loc.name.toLowerCase().includes(normalized))
+      .slice(0, 6)
+      .map((loc) => ({
+        placeId: loc.id,
+        label: loc.name,
+        description: loc.description,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        countryCode: null,
+      } satisfies LocationSelection));
   }
 
   const token = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
